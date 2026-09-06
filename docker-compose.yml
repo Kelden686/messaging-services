@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: messaging-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: messaging_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - messaging-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: messaging-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - messaging-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: messaging-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadminpassword
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - messaging-network
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set localminio http://minio:9000 minioadmin minioadminpassword;
+      /usr/bin/mc mb localminio/messaging-bucket || true;
+      /usr/bin/mc anonymous set public localminio/messaging-bucket || true;
+      exit 0;
+      "
+    networks:
+      - messaging-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  messaging-network:
+    driver: bridge

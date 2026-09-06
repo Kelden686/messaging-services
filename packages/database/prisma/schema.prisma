@@ -1,0 +1,151 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String                    @id @default(uuid())
+  email               String                    @unique
+  passwordHash        String
+  name                String
+  avatar              String?
+  status              String?                   @default("Hey there! I am using this messaging app.")
+  phone               String?
+  publicKey           String?
+  isOnline            Boolean                   @default(false)
+  lastSeenAt          DateTime                  @default(now())
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  
+  // Relations
+  contacts            Contact[]                 @relation("UserContacts")
+  contactOf           Contact[]                 @relation("ContactUsers")
+  participants        ConversationParticipant[]
+  messages            Message[]                 @relation("Sender")
+  readReceipts        MessageReadReceipt[]
+  reactions           MessageReaction[]
+  starredMessages     StarredMessage[]
+  sessions            Session[]
+  createdConversations Conversation[]           @relation("CreatedConversations")
+}
+
+model Contact {
+  id            String        @id @default(uuid())
+  userId        String
+  contactUserId String
+  status        String        @default("PENDING") // PENDING, ACCEPTED, BLOCKED
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
+  contactUser   User          @relation("ContactUsers", fields: [contactUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contactUserId])
+}
+
+model Conversation {
+  id           String                    @id @default(uuid())
+  type         String // DIRECT, GROUP, CHANNEL
+  name         String? // Nullable for direct messages
+  avatar       String?
+  createdById  String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  // Relations
+  createdBy    User?                     @relation("CreatedConversations", fields: [createdById], references: [id], onDelete: SetNull)
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String          @id @default(uuid())
+  conversationId String
+  userId         String
+  role           String          @default("MEMBER") // ADMIN, MEMBER
+  joinedAt       DateTime        @default(now())
+  mutedUntil     DateTime?
+
+  conversation   Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String               @id @default(uuid())
+  conversationId String
+  senderId       String
+  type           String               @default("TEXT") // TEXT, IMAGE, VIDEO, FILE, VOICE, LOCATION
+  content        String? // Null for files/images with only attachments
+  mediaUrl       String?
+  mediaName      String?
+  mediaSize      Int?
+  replyToId      String?
+  isEdited       Boolean              @default(false)
+  deletedAt      DateTime? // Null if not deleted
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  // Relations
+  conversation   Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User                 @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo        Message?             @relation("ReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        Message[]            @relation("ReplyTo")
+  readReceipts   MessageReadReceipt[]
+  reactions      MessageReaction[]
+  starredBy      StarredMessage[]
+
+  @@index([conversationId, createdAt])
+}
+
+model MessageReadReceipt {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+}
+
+model StarredMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
