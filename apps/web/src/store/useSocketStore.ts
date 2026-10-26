@@ -94,6 +94,14 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       }
     });
 
+    // 8. New conversation created
+    socketInstance.on('conversation_created', (conv) => {
+      useChatStore.getState().fetchConversations();
+      if (conv?.id) {
+        socketInstance.emit(SOCKET_EVENTS.JOIN_CONVERSATION, { conversationId: conv.id });
+      }
+    });
+
     set({ socket: socketInstance });
   },
 

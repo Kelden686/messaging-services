@@ -118,19 +118,30 @@ export const useChatStore = create<ChatState>((set) => ({
 
   addMessage: (message) =>
     set((state) => {
+      const currentUserId = useAuthStore.getState().user?.id;
+
       // 1. Add to active messages array if it belongs to selected chat
       const isForActiveChat = state.activeConversationId === message.conversationId;
       const updatedMessages = isForActiveChat
         ? [...state.messages.filter((m) => m.id !== message.id), message]
         : state.messages;
 
+      // If conversation is not in local state, fetch conversations so it appears immediately
+      const conversationExists = state.conversations.some((c) => c.id === message.conversationId);
+      if (!conversationExists) {
+        setTimeout(() => {
+          useChatStore.getState().fetchConversations();
+        }, 50);
+      }
+
       // 2. Update conversation list preview & unread counts
       const updatedConversations = state.conversations.map((c) => {
         if (c.id === message.conversationId) {
+          const isSender = message.senderId === currentUserId;
           return {
             ...c,
             lastMessage: message,
-            unreadCount: isForActiveChat ? 0 : c.unreadCount + (message.senderId !== state.activeConversationId ? 1 : 0), // wait, checking if sender is not active user
+            unreadCount: isForActiveChat || isSender ? 0 : c.unreadCount + 1,
           };
         }
         return c;

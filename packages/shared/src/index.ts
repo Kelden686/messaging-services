@@ -5,24 +5,24 @@ import { z } from 'zod';
 // ==========================================
 
 export const RegisterSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').transform((val) => val.trim().toLowerCase()),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  name: z.string().min(2, 'Name must be at least 2 characters').transform((val) => val.trim()),
   avatar: z.string().url('Invalid avatar URL').optional().or(z.literal('')),
 });
 
 export type RegisterInput = z.infer<typeof RegisterSchema>;
 
 export const LoginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').transform((val) => val.trim().toLowerCase()),
   password: z.string().min(1, 'Password is required'),
 });
 
 export type LoginInput = z.infer<typeof LoginSchema>;
 
 export const VerifyOtpSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  code: z.string().length(6, 'OTP code must be 6 digits'),
+  email: z.string().email('Invalid email address').transform((val) => val.trim().toLowerCase()),
+  code: z.string().length(6, 'OTP code must be 6 digits').transform((val) => val.trim()),
 });
 
 export type VerifyOtpInput = z.infer<typeof VerifyOtpSchema>;
@@ -46,7 +46,7 @@ export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 // ==========================================
 
 export const AddContactSchema = z.object({
-  searchQuery: z.string().min(1, 'Username, email, or phone is required'),
+  searchQuery: z.string().min(1, 'Username, email, or phone is required').transform((val) => val.trim()),
 });
 
 export type AddContactInput = z.infer<typeof AddContactSchema>;

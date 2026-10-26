@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useChatStore, Conversation } from '../../store/useChatStore';
 import { useSocketStore } from '../../store/useSocketStore';
 import { apiClient } from '../../utils/apiClient';
 import { 
   MessageSquare, Users, Radio, Search, Plus, LogOut, Sun, Moon, 
-  Settings, CheckCircle2, X, Shield, PlusCircle, Check, Bell
+  Settings, CheckCircle2, X, Shield, PlusCircle, Check, Bell,
+  Camera, Upload, Loader2
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -41,6 +42,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSelectChat }) => {
   const [editStatus, setEditStatus] = useState(user?.status || '');
   const [editAvatar, setEditAvatar] = useState(user?.avatar || '');
   const [editPhone, setEditPhone] = useState(user?.phone || '');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Add Contact Form State
   const [contactQuery, setContactQuery] = useState('');
@@ -84,6 +87,52 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSelectChat }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (PNG, JPG, WebP, etc.)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const presigned = await apiClient(
+        `/upload/presigned-url?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`
+      );
+
+      if (presigned.isLocalFallback) {
+        await fetch(presigned.uploadUrl, {
+          method: 'POST',
+          body: file,
+        });
+      } else {
+        await fetch(presigned.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type },
+        });
+      }
+
+      setEditAvatar(presigned.downloadUrl);
+    } catch (err: any) {
+      console.error('Failed to upload profile photo:', err);
+      alert('Failed to upload profile photo. Please try again.');
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset input value so same file can be selected again if desired
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -98,16 +147,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSelectChat }) => {
     e.preventDefault();
     setContactError(null);
     setContactSuccess(null);
+    const query = contactQuery.trim();
+    if (!query) return;
+
     try {
       const res = await apiClient('/contacts', {
         method: 'POST',
-        body: JSON.stringify({ searchQuery: contactQuery }),
+        body: JSON.stringify({ searchQuery: query }),
       });
-      setContactSuccess(res.message || 'Request sent');
+      setContactSuccess(res.message || 'Contact request sent successfully');
       setContactQuery('');
       fetchContacts();
     } catch (err: any) {
-      setContactError(err.message);
+      setContactError(err.message || 'Failed to add contact');
     }
   };
 
@@ -195,8 +247,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSelectChat }) => {
   return (
     <div className="w-full md:w-[380px] h-full flex flex-col bg-sidebar-bg dark:bg-sidebar-bg-dark border-r border-zinc-200 dark:border-zinc-800 transition-colors duration-300">
       {/* Sidebar Header */}
-      <div className="p-4 bg-header-bg dark:bg-header-bg-dark flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="p-3.5 bg-header-bg dark:bg-header-bg-dark flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+        <div className="flex items-center gap-2.5">
           <img 
             src={user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user?.name}`} 
             alt="Avatar" 
@@ -211,7 +263,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSelectChat }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <div className="hidden sm:flex items-center gap-1.5 mr-1 px-2.5 py-1 bg-white/60 dark:bg-zinc-800/60 rounded-full border border-zinc-200/50 dark:border-zinc-700/50">
+            <img src="/logo.png" alt="Beam Chat" className="w-4 h-4 object-contain rounded-md" />
+            <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 tracking-tight">Beam Chat</span>
+          </div>
           <button 
             onClick={toggleTheme} 
             className="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg transition-colors cursor-pointer"
@@ -572,6 +628,65 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSelectChat }) => {
             <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Edit Profile Settings</h3>
             
             <form onSubmit={handleUpdateProfile} className="space-y-4">
+              {/* Profile Photo / Avatar Picker */}
+              <div className="flex flex-col items-center justify-center py-2">
+                <div 
+                  className="relative group cursor-pointer"
+                  onClick={() => !isUploadingAvatar && avatarInputRef.current?.click()}
+                  title="Click to choose a photo"
+                >
+                  <img
+                    src={editAvatar || user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(editName || 'user')}`}
+                    alt="Profile Avatar"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-brand-green/30 shadow-md group-hover:opacity-80 transition-all"
+                  />
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white">
+                    <Camera className="w-6 h-6 mb-1" />
+                    <span className="text-[10px] font-bold tracking-wide">CHANGE</span>
+                  </div>
+
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 bg-black/60 rounded-full flex flex-col items-center justify-center text-white">
+                      <Loader2 className="w-7 h-7 animate-spin text-brand-green mb-1" />
+                      <span className="text-[10px] font-semibold">Uploading...</span>
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  type="file"
+                  ref={avatarInputRef}
+                  onChange={handleAvatarFileChange}
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                  className="hidden"
+                />
+
+                <div className="flex items-center gap-2 mt-2.5">
+                  <button
+                    type="button"
+                    disabled={isUploadingAvatar}
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="text-xs font-semibold text-brand-green hover:underline cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{isUploadingAvatar ? 'Uploading photo...' : 'Select Photo from Computer'}</span>
+                  </button>
+
+                  {editAvatar && (
+                    <>
+                      <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditAvatar('')}
+                        className="text-xs text-red-500 hover:underline cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
                   Display Name
@@ -606,19 +721,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSelectChat }) => {
                   placeholder="e.g. +1 555-0199"
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:border-brand-green outline-none rounded-xl text-sm text-zinc-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
-                  Avatar Image URL
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={editAvatar}
-                  onChange={(e) => setEditAvatar(e.target.value)}
                   className="w-full px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 focus:border-brand-green outline-none rounded-xl text-sm text-zinc-900 dark:text-white"
                 />
               </div>

@@ -193,10 +193,18 @@ export const createMessage = async (req: AuthenticatedRequest, res: Response, ne
       },
     });
 
-    // Broadcast message via Socket.io
+    // Broadcast message via Socket.io to conversation room and each participant's personal room
     const io = req.app.get('io');
     if (io) {
       io.to(`room:${conversationId}`).emit(SOCKET_EVENTS.RECEIVE_MESSAGE, message);
+      
+      const participants = await prisma.conversationParticipant.findMany({
+        where: { conversationId },
+        select: { userId: true },
+      });
+      participants.forEach((p) => {
+        io.to(`user:${p.userId}`).emit(SOCKET_EVENTS.RECEIVE_MESSAGE, message);
+      });
     }
 
     res.status(201).json(message);

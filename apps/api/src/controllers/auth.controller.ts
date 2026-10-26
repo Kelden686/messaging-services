@@ -5,6 +5,7 @@ import { prisma } from 'database';
 import { RegisterSchema, LoginSchema, VerifyOtpSchema } from 'shared';
 import { config } from '../config';
 import { cacheService } from '../services/redis.service';
+import { sendOtpEmail } from '../services/email.service';
 
 const ACCESS_TOKEN_EXPIRY = 15 * 60 * 1000; // 15 mins
 const REFRESH_TOKEN_EXPIRY_DAYS = 7;
@@ -48,14 +49,13 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       600
     );
 
-    // Output OTP to console for local testing
-    console.log(`\n==========================================`);
-    console.log(`🔑 OTP Verification for ${email}`);
-    console.log(`Code: ${otp}`);
-    console.log(`==========================================\n`);
+    // Send real-time OTP to Gmail inbox
+    const emailResult = await sendOtpEmail(email, otp);
 
     res.status(200).json({
-      message: 'Verification OTP sent to email (simulated in console)',
+      message: emailResult.sent
+        ? 'Verification code sent to your Gmail inbox'
+        : emailResult.message,
       email,
     });
   } catch (error) {

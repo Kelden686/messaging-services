@@ -75,21 +75,47 @@ export const addContact = async (req: AuthenticatedRequest, res: Response, next:
 
     const currentUserId = req.user?.id as string;
     const { searchQuery } = parseResult.data;
+    const query = searchQuery.trim();
 
-    // Find the contact target user
+    // Check if user is searching for themselves
+    const isSelf = await prisma.user.findFirst({
+      where: {
+        id: currentUserId,
+        OR: [
+          { email: query },
+          { email: query.toLowerCase() },
+          { name: query },
+          { phone: query },
+        ],
+      },
+    });
+
+    if (isSelf) {
+      res.status(400).json({ error: 'You cannot add yourself as a contact' });
+      return;
+    }
+
+    // Find the contact target user (case-insensitive for email, exact or partial for name/phone)
     const targetUser = await prisma.user.findFirst({
       where: {
-        OR: [
-          { email: searchQuery },
-          { name: searchQuery },
-          { phone: searchQuery },
+        AND: [
+          { id: { not: currentUserId } },
+          {
+            OR: [
+              { email: query },
+              { email: query.toLowerCase() },
+              { name: query },
+              { name: { contains: query } },
+              { phone: query },
+              { phone: { contains: query } },
+            ],
+          },
         ],
-        NOT: { id: currentUserId },
       },
     });
 
     if (!targetUser) {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: 'User not found. Please check the email, name, or phone number.' });
       return;
     }
 
@@ -122,6 +148,24 @@ export const addContact = async (req: AuthenticatedRequest, res: Response, next:
           where: { id: existingRelation.id },
           data: { status: 'ACCEPTED' },
         });
+
+        // Broadcast notification to the other user
+        const io = req.app.get('io');
+        if (io) {
+          const currentUser = await prisma.user.findUnique({
+            where: { id: currentUserId },
+            select: { id: true, name: true, avatar: true, status: true },
+          });
+          if (currentUser) {
+            io.to(`user:${targetUser.id}`).emit('contact_request', {
+              id: updated.id,
+              user: currentUser,
+              status: 'ACCEPTED',
+              updatedAt: updated.updatedAt,
+            });
+          }
+        }
+
         res.status(200).json({ message: 'Contact request accepted', contact: updated });
         return;
       }
@@ -201,17 +245,31 @@ export const acceptContact = async (req: AuthenticatedRequest, res: Response, ne
       data: { status: 'ACCEPTED' },
     });
 
-    // Broadcast notification to the initiator that their request was accepted
+    // Broadcast notification to both initiator and acceptor
     const io = req.app.get('io');
     if (io) {
       const currentUser = await prisma.user.findUnique({
         where: { id: currentUserId },
         select: { id: true, name: true, avatar: true, status: true },
       });
+      const otherUser = await prisma.user.findUnique({
+        where: { id: contact.userId },
+        select: { id: true, name: true, avatar: true, status: true },
+      });
+
       if (currentUser) {
         io.to(`user:${contact.userId}`).emit('contact_request', {
           id: updatedContact.id,
           user: currentUser,
+          status: 'ACCEPTED',
+          updatedAt: updatedContact.updatedAt,
+        });
+      }
+
+      if (otherUser) {
+        io.to(`user:${currentUserId}`).emit('contact_request', {
+          id: updatedContact.id,
+          user: otherUser,
           status: 'ACCEPTED',
           updatedAt: updatedContact.updatedAt,
         });

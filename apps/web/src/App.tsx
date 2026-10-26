@@ -67,13 +67,11 @@ function App() {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
         <div className="relative flex flex-col items-center animate-pulse">
-          {/* Logo animation */}
-          <div className="p-4 bg-brand-green/10 text-brand-green rounded-3xl mb-4 border border-brand-green/20">
-            <svg className="w-14 h-14" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12.011 2.29c-5.358 0-9.702 4.343-9.702 9.7 0 2.05.635 3.96 1.725 5.54L2.39 22l4.896-1.282c1.517.827 3.25 1.298 5.093 1.298 5.358 0 9.702-4.343 9.702-9.7 0-5.36-4.343-9.7-9.7-9.701zm0 17.766c-1.848 0-3.578-.495-5.075-1.36l-.364-.216-3.032.795.808-2.95-.236-.377a8.03 8.03 0 01-1.233-4.22c0-4.437 3.611-8.048 8.048-8.048 4.436 0 8.047 3.612 8.047 8.05-.004 4.435-3.612 8.046-8.058 8.046z"/>
-            </svg>
+          {/* Beam Chat Logo */}
+          <div className="mb-4">
+            <img src="/logo.png" alt="Beam Chat" className="w-20 h-auto object-contain drop-shadow-lg rounded-2xl" />
           </div>
-          <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-200">Messaging Hub</h2>
+          <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-200">Beam Chat</h2>
           <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Connecting to secure servers...</p>
         </div>
         
@@ -144,12 +142,12 @@ function App() {
                 />
                 
                 <div className="max-w-md flex flex-col items-center z-10">
-                  <div className="p-5 bg-brand-green/5 text-brand-green dark:text-emerald-400 rounded-full mb-5 border border-brand-green/10">
-                    <MessageSquare className="w-16 h-16 stroke-[1.25]" />
+                  <div className="mb-4">
+                    <img src="/logo.png" alt="Beam Chat" className="w-24 h-auto object-contain drop-shadow-xl rounded-2xl" />
                   </div>
-                  <h2 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">Messaging Web Client</h2>
+                  <h2 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">Beam Chat Web</h2>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 max-w-sm">
-                    Send and receive messages instantly in real-time. Link contacts, establish groups, or broadcast in channels.
+                    Send and receive messages instantly in real-time. Connect with friends, create groups, and share media seamlessly.
                   </p>
                 </div>
 

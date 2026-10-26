@@ -96,6 +96,7 @@ app.put('/api/users/profile', authenticateJWT as any, userController.updateProfi
 app.get('/api/contacts', authenticateJWT as any, contactController.getContacts);
 app.post('/api/contacts', authenticateJWT as any, contactController.addContact);
 app.put('/api/contacts/:id/accept', authenticateJWT as any, contactController.acceptContact);
+app.post('/api/contacts/:id/accept', authenticateJWT as any, contactController.acceptContact);
 app.delete('/api/contacts/:id', authenticateJWT as any, contactController.deleteContact);
 app.post('/api/contacts/:id/block', authenticateJWT as any, contactController.blockContact);
 

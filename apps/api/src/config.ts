@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 dotenv.config(); // Also check local app directory .env
 
 export const config = {
@@ -9,6 +9,12 @@ export const config = {
   DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/messaging_db?schema=public',
   JWT_SECRET: process.env.JWT_SECRET || 'messaging_app_jwt_secret_key_123',
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'messaging_app_jwt_refresh_secret_key_123',
+  
+  // Email / Gmail SMTP Settings
+  EMAIL_USER: process.env.EMAIL_USER || '',
+  EMAIL_PASS: process.env.EMAIL_PASS || '',
+  SMTP_HOST: process.env.SMTP_HOST || '',
+  SMTP_PORT: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : undefined,
   
   // Redis Settings
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',

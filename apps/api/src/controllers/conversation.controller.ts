@@ -192,6 +192,12 @@ export const createConversation = async (req: AuthenticatedRequest, res: Respons
         },
       });
 
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`user:${currentUserId}`).emit('conversation_created', newDirect);
+        io.to(`user:${targetUserId}`).emit('conversation_created', newDirect);
+      }
+
       res.status(201).json(newDirect);
       return;
     }

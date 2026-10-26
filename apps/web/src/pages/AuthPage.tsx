@@ -67,19 +67,20 @@ export const AuthPage: React.FC = () => {
         className="w-full max-w-md bg-white/70 dark:bg-zinc-900/75 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl rounded-3xl p-8 overflow-hidden z-10"
       >
         <div className="text-center mb-6">
-          <div className="inline-flex p-3 bg-brand-green/10 text-brand-green rounded-2xl mb-3">
-            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12.011 2.29c-5.358 0-9.702 4.343-9.702 9.7 0 2.05.635 3.96 1.725 5.54L2.39 22l4.896-1.282c1.517.827 3.25 1.298 5.093 1.298 5.358 0 9.702-4.343 9.702-9.7 0-5.36-4.343-9.7-9.7-9.701zm0 17.766c-1.848 0-3.578-.495-5.075-1.36l-.364-.216-3.032.795.808-2.95-.236-.377a8.03 8.03 0 01-1.233-4.22c0-4.437 3.611-8.048 8.048-8.048 4.436 0 8.047 3.612 8.047 8.05-.004 4.435-3.612 8.046-8.058 8.046z"/>
-            </svg>
+          <div className="flex justify-center mb-3">
+            <img src="/logo.png" alt="Beam Chat" className="h-16 w-auto object-contain drop-shadow-md rounded-2xl" />
           </div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
+          <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+            Beam Chat
+          </h1>
+          <h2 className="text-base font-semibold text-zinc-700 dark:text-zinc-300 mt-0.5">
             {mode === 'login' && 'Welcome Back'}
-            {mode === 'register' && 'Create Account'}
-            {mode === 'otp' && 'Verify Email'}
+            {mode === 'register' && 'Create Your Account'}
+            {mode === 'otp' && 'Verify Email Address'}
           </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            {mode === 'login' && 'Log in to connect with your contacts'}
-            {mode === 'register' && 'Get started with a free messaging account'}
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            {mode === 'login' && 'Log in to connect with your friends on Beam Chat'}
+            {mode === 'register' && 'Get started with fast, modern messaging on Beam Chat'}
             {mode === 'otp' && `Enter the 6-digit OTP sent to ${email}`}
           </p>
         </div>
@@ -176,22 +177,6 @@ export const AuthPage: React.FC = () => {
                       placeholder="John Doe"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-green/50 outline-none rounded-xl text-zinc-900 dark:text-white text-sm transition-all duration-200"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
-                    Avatar Image URL (Optional)
-                  </label>
-                  <div className="relative">
-                    <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
-                    <input
-                      type="url"
-                      placeholder="https://example.com/avatar.jpg"
-                      value={avatar}
-                      onChange={(e) => setAvatar(e.target.value)}
                       className="w-full pl-11 pr-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-green/50 outline-none rounded-xl text-zinc-900 dark:text-white text-sm transition-all duration-200"
                     />
                   </div>

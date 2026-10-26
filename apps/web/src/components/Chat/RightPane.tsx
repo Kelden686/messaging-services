@@ -105,7 +105,7 @@ export const RightPane: React.FC<RightPaneProps> = ({ conversation, onClose, onR
 
           {conversation.type === 'DIRECT' && (
             <p className="text-xs text-zinc-550 dark:text-zinc-400 max-w-[240px] mt-3">
-              {conversation.participants.find(p => p.userId !== currentUser?.id)?.user.status || 'Hey there! I am using this messaging app.'}
+              {conversation.participants.find(p => p.userId !== currentUser?.id)?.user.status || 'Hey there! I am using Beam Chat.'}
             </p>
           )}
         </div>
